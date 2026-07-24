@@ -1,0 +1,50 @@
+name: homemade-review
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    # Only run when a repo owner/member/collaborator comments "/review" on a PR.
+    # This gate is what keeps strangers from spending your API credits.
+    if: >-
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/review') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write       # required by the opencode action (OIDC)
+      contents: read        # checkout the PR code
+      pull-requests: write  # comment on the PR (and inline reviews later)
+      issues: write         # PR conversation comments use the issues API
+    steps:
+      - name: Checkout the PR code
+        uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run the reviewer
+        uses: anomalyco/opencode/github@latest
+        env:
+          # One key covers both OpenCode plans (same account at opencode.ai/auth):
+          #   - OpenCode Go (subscription, models "opencode-go/...")
+          #   - OpenCode Zen (pay-as-you-go, models "opencode/...")
+          # Create the key at https://opencode.ai/auth -> Create API Key, then add
+          # it as the OPENCODE_API_KEY secret in Settings > Secrets and variables > Actions.
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          use_github_token: true
+          # Default runs on the OpenCode Go subscription (~zero marginal cost).
+          # Override per repo with a REVIEWER_MODEL variable, e.g.
+          # "opencode-go/kimi-k3" or "opencode/claude-sonnet-5" (Zen pay-as-you-go).
+          model: ${{ vars.REVIEWER_MODEL || 'opencode-go/deepseek-v4-flash' }}
+          agent: reviewer
+          prompt: |
+            Review pull request #${{ github.event.issue.number }} of this repository.
+            Follow your agent instructions exactly: load AGENTS.md and any custom
+            rubric, analyze the diff with the P0-P3 rubric, and post exactly one
+            review comment to the PR.
