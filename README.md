@@ -36,6 +36,12 @@ posts exactly one review comment on the PR
    One key covers both OpenCode plans: **Go** (subscription, `opencode-go/...` models) and **Zen** (pay-as-you-go, `opencode/...` models).
 3. **Comment `/review`** on any pull request.
 
+Usage extras:
+
+- **Focus hints:** `/review focus on security` or `/review only the auth changes`
+- **Delta reviews:** push fixes, comment `/review` again — it reads its previous review, acknowledges what you fixed, and only reports what's new
+- **Dependency awareness:** changes to manifests/lockfiles (`package.json`, `requirements.txt`, ...) are always reviewed as P0/P1 candidates (supply-chain risk, pinning, licenses)
+
 No GitHub App installation required — it uses the runner's built-in `GITHUB_TOKEN`.
 
 ## Configure
