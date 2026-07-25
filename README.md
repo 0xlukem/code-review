@@ -62,7 +62,7 @@ No GitHub App installation required — it uses the runner's built-in `GITHUB_TO
 | **P2** | Suggestion | Structure, performance that matters, weak typing, missing tests |
 | **P3** | Nit | Style and naming beyond what tooling enforces |
 
-Anti-noise by design: max 10 findings, "when in doubt, don't report", and it never repeats what your linter already catches.
+Anti-noise by design: "when in doubt, don't report", it never repeats what your linter already catches, and a 30-finding ceiling that cuts P3s and P2s first — never a P0/P1 (tunable per repo via `.github/reviewer.md`).
 
 ## Security notes
 
