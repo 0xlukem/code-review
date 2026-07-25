@@ -24,7 +24,6 @@ jobs:
         with:
           ref: refs/pull/${{ github.event.issue.number }}/head
           fetch-depth: 1
-          persist-credentials: false
 
       - name: Run the reviewer
         uses: anomalyco/opencode/github@latest
