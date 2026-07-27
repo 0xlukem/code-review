@@ -64,6 +64,9 @@ Post exactly ONE comment to the PR with `gh pr comment <N> --body-file -` (pipe 
 **Verdict:** APPROVE | COMMENT | REQUEST CHANGES
 **Scope:** N files, +A/-D. Reviewed: <areas covered>.
 
+### Resolved since last review
+(re-reviews only: one line per finding fixed since the previous review, confirming it as resolved. Omit this section entirely on the first review of a PR)
+
 ### P0 — Must fix
 - **`path/file.ts:42` — short title**
   - What: ...
