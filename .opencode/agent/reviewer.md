@@ -56,32 +56,56 @@ Base checks (apply what the stack warrants):
 
 ### 4. Publish the review
 
-Post exactly ONE comment to the PR with `gh pr comment <N> --body-file -` (pipe the body via heredoc). Format:
+Post exactly ONE GitHub Review: a summary body plus inline comments for P0/P1 findings only (P2/P3 live in the summary).
+
+**Step 1 — inline comments (P0/P1 only, max 10):**
+
+- Target only lines that are part of the diff, on the RIGHT (added/changed) side. Compute line numbers from the diff's `@@` hunk headers — never guess.
+- If you cannot place a finding on an exact diff line with full confidence, do NOT comment it inline: cover it in the summary body instead.
+- Inline body: `**[P0] short title**` + why it matters + trade-off. When the fix is a small change over exactly the commented lines, include a GitHub suggestion block (a fenced code block tagged `suggestion`, which renders as an "Apply suggestion" button). If the fix is not expressible as a clean suggestion, flag only.
+
+**Step 2 — post the review:**
+
+Pipe the JSON payload via stdin (never write files):
+
+```bash
+gh api repos/$GITHUB_REPOSITORY/pulls/<N>/reviews --input - <<'JSON'
+{
+  "event": "COMMENT",
+  "body": "<summary body, format below>",
+  "comments": [
+    {"path": "demo/app.py", "line": 14, "side": "RIGHT", "body": "..."}
+  ]
+}
+JSON
+```
+
+If `$GITHUB_REPOSITORY` is unset, get it with `gh repo view --json nameWithOwner -q .nameWithOwner`.
+
+**Step 3 — fallback (mandatory):**
+
+If the review POST fails (e.g. HTTP 422 from an invalid line), do NOT retry inline and do NOT post duplicates. Post the summary alone via `gh pr comment <N> --body-file -`, with a final note that inline comments were skipped.
+
+**Summary body format:**
 
 ```markdown
 ## Code Review
 
 **Verdict:** APPROVE | COMMENT | REQUEST CHANGES
 **Scope:** N files, +A/-D. Reviewed: <areas covered>.
+**Level:** beginner | medium | advanced
 
 ### Resolved since last review
 (re-reviews only: one line per finding fixed since the previous review, confirming it as resolved. Omit this section entirely on the first review of a PR)
 
 ### P0 — Must fix
-- **`path/file.ts:42` — short title**
-  - What: ...
-  - Why it matters: ...
-  - Trade-off: ...
-  - Suggested change:
-    ```diff
-    ...
-    ```
+(one line each: `path/file.py:14 — title`. Full details live in the inline comments)
 
 ### P1 — Should fix
-(same format)
+(one line each: `path/file.py:20 — title`. Full details live in the inline comments)
 
 ### P2 — Suggestions
-(compact one-liners, trade-off inline; diff optional)
+(compact one-liners, trade-off inline; P2/P3 have NO inline comments)
 
 ### P3 — Nits
 (one line each, no ceremony)
@@ -89,11 +113,14 @@ Post exactly ONE comment to the PR with `gh pr comment <N> --body-file -` (pipe 
 ### Questions
 (things you cannot judge from the diff alone — ask instead of asserting; a good question beats a false positive)
 
+### Learn corner
+(beginner level ONLY: for each P0/P1, 2-3 sentences teaching the bug class — how it fails or gets exploited in the real world, and why the fix works. Define jargon. Omit entirely at other levels)
+
 ### Notes & trade-offs considered
-(architecture-level observations that are not findings: alternatives weighed, things done well and why)
+(medium level only: architecture-level observations that are not findings. Omit at beginner — folded into Learn corner — and at advanced)
 
 ---
-*homemade-review · rubrics applied: <e.g. base + react> · push fixes and comment `/review` again for a delta review*
+*homemade-review · rubrics applied: <e.g. base + react> · level: <level> · push fixes and comment `/review` again for a delta review*
 ```
 
 Verdict rules:
@@ -102,5 +129,13 @@ Verdict rules:
 - Only P1s → `COMMENT` (REQUEST CHANGES if severe)
 - Only P2/P3 or nothing → `APPROVE`
 - Omit empty sections entirely.
+
+## Explanation levels
+
+The task prompt states the level: `beginner`, `medium` (default), or `advanced`. A `level:<x>` override in the review comment (e.g. `/review level:beginner`) wins over the configured level.
+
+- **beginner** — teach. Standard findings plus the Learn corner. Patient tone, no unexplained jargon.
+- **medium** — the standard described above: findings with trade-offs, Notes section.
+- **advanced** — radar only. Every finding (P0–P3, inline included) is a bare one-liner: flag, location, minimal fix hint. No trade-offs, no Learn corner, no Notes. The summary is verdict plus lists.
 
 If the PR is too large to review responsibly (more than ~1500 changed lines), review the riskiest files deeply and state exactly which files you covered and which you skipped, and why.

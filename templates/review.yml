@@ -1,0 +1,22 @@
+# Copy this file to .github/workflows/review.yml in any repo where you want
+# homemade-review, then add the OPENCODE_API_KEY secret to that repo.
+#
+# Pinning: @v1 is the standard movable tag. For maximum security, pin the full
+# commit SHA instead: 0xlukem/code-review/.github/workflows/reusable-review.yml@<sha>
+
+name: review
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    uses: 0xlukem/code-review/.github/workflows/reusable-review.yml@v1
+    with:
+      # Optional — both have sensible defaults and can also be set as repo
+      # variables (REVIEWER_MODEL / REVIEWER_LEVEL) without editing this file.
+      model: opencode-go/deepseek-v4-flash
+      explanation_level: medium   # beginner | medium | advanced
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
