@@ -1,9 +1,10 @@
 """Demo module for the review bot test suite."""
 
+import os
 import sqlite3
 from datetime import datetime
 
-API_KEY = "sk-live-9f8e7d6c5b4a3210"
+API_KEY = os.environ["API_KEY"]
 
 DB_PATH = "demo.db"
 
@@ -11,8 +12,7 @@ DB_PATH = "demo.db"
 def get_user(username):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    query = f"SELECT * FROM users WHERE username = '{username}'"
-    cur.execute(query)
+    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
     return cur.fetchone()
 
 
