@@ -12,6 +12,13 @@ on:
 
 jobs:
   review:
+    # Required: caller jobs must explicitly grant the permissions the
+    # reusable workflow needs, or the token arrives with all perms = none.
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
     uses: 0xlukem/code-review/.github/workflows/reusable-review.yml@v1
     with:
       # Optional — both have sensible defaults and can also be set as repo

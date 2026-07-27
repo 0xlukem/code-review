@@ -7,6 +7,14 @@ on:
 jobs:
   # Dogfooding: this repo reviews its own PRs using its own reusable workflow.
   review:
+    # Caller jobs must explicitly grant every permission the reusable
+    # workflow requests — otherwise GitHub passes the token with all
+    # permissions set to none.
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
     uses: ./.github/workflows/reusable-review.yml
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
