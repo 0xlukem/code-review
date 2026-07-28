@@ -47,11 +47,11 @@ def calc(x):
 
 def run_report(filename):
     import subprocess
-    subprocess.run(f"cat {filename}", shell=True)
+    subprocess.run(["cat", filename])
 
 
 def check_token(provided, expected):
-    return provided == expected
+    return hmac.compare_digest(provided, expected)
 
 
 def hash_password(pw):

@@ -19,5 +19,5 @@ export function UserList({ fetchUsers, onSelect }) {
 }
 
 export function Bio({ html }) {
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />;
 }
