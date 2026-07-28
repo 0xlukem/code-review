@@ -57,6 +57,7 @@ Then comment `/review` on any pull request.
 | Standard review | Comment `/review` |
 | Focus hint | `/review focus on security` or `/review only the auth changes` |
 | Change level once | `/review level:beginner` (overrides repo config) |
+| Force a fresh full review | `/review full` (skips the delta shortcut, even without new commits) |
 | Delta review | Push fixes, comment `/review` again — it acknowledges what you fixed and reports only what's still open |
 
 ## Configure
