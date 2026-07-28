@@ -43,3 +43,17 @@ def created_stamp():
 
 def calc(x):
     return x * 2
+
+
+def run_report(filename):
+    import subprocess
+    subprocess.run(f"cat {filename}", shell=True)
+
+
+def check_token(provided, expected):
+    return provided == expected
+
+
+def hash_password(pw):
+    import hashlib
+    return hashlib.md5(pw.encode()).hexdigest()

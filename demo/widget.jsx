@@ -17,3 +17,7 @@ export function UserList({ fetchUsers, onSelect }) {
     </ul>
   );
 }
+
+export function Bio({ html }) {
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+}
