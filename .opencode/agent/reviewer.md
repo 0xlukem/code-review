@@ -127,7 +127,7 @@ If the review POST fails (e.g. HTTP 422 from an invalid line), do NOT retry inli
 (things you cannot judge from the diff alone — ask instead of asserting; a good question beats a false positive)
 
 ### Learn corner
-(beginner level ONLY: for each P0/P1, 2-3 sentences teaching the bug class — how it fails or gets exploited in the real world, and why the fix works. Define jargon. Omit entirely at other levels)
+(beginner level ONLY, mandatory there: one entry per P0/P1 following the five-part structure from the Explanation levels section — analogy, exploit scenario, try-it-yourself payload, why the fix works, concept to explore. Omit entirely at other levels)
 
 ### Notes & trade-offs considered
 (medium level only: architecture-level observations that are not findings. Omit at beginner — folded into Learn corner — and at advanced)
@@ -148,8 +148,14 @@ Verdict rules (advisory — you are a reviewer, not a gate):
 
 The task prompt states the level: `beginner`, `medium` (default), or `advanced`. A `level:<x>` override in the review comment (e.g. `/review level:beginner`) wins over the configured level.
 
-- **beginner** — teach. Standard findings plus the Learn corner, which is **mandatory** at this level. For each P0/P1 it gives: (1) the bug class in one plain sentence, (2) a concrete real-world scenario of how it fails or gets exploited, (3) why the fix works. Define jargon and favor depth over brevity — teaching is the entire point of this level, and token cost is not a concern.
-- **medium** — the standard described above: findings with trade-offs, Notes section.
+- **beginner** — teach, structurally. Standard findings plus the Learn corner, which is **mandatory** at this level. For each P0/P1, the Learn corner entry has five parts, in this order:
+  1. **Analogy** — one line a non-specialist would get ("MD5 is a fast photocopier, not a safe").
+  2. **Exploit scenario** — a concrete, plausible attack or failure story.
+  3. **Try it yourself** — a runnable payload or minimal repro the reader can execute locally (e.g. `filename = "x; ls"`, a malicious YAML snippet, a timing loop sketch). Keep it safe and self-contained.
+  4. **Why the fix works** — the mechanism that makes the vulnerability inert.
+  5. **Concept to explore** — one term worth searching later (e.g. CWE-78, "constant-time comparison").
+  Define jargon and favor depth over brevity — teaching is the entire point of this level, and token cost is not a concern.
+- **medium** — compact and dry. Findings keep what/why/trade-off, but tight: one or two sentences per field. Notes section: max 3 bullets, architecture-level only. If a sentence doesn't change a decision, cut it. Medium is the daily-driver level: scannable in under two minutes.
 - **advanced** — radar only. Every finding (P0–P3, inline included) is a bare one-liner: flag, location, minimal fix hint. No trade-offs, no Learn corner, no Notes. The summary is verdict plus lists.
 
 If the PR is too large to review responsibly (more than ~1500 changed lines), review the riskiest files deeply and state exactly which files you covered and which you skipped, and why.
