@@ -65,11 +65,17 @@ Post exactly ONE GitHub Review: a summary body plus inline comments for P0/P1 fi
 
 - Target only lines that are part of the diff, on the RIGHT (added/changed) side. Compute line numbers from the diff's `@@` hunk headers — never guess.
 - If you cannot place a finding on an exact diff line with full confidence, do NOT comment it inline: cover it in the summary body instead.
-- Inline body: `**[P0] short title**` + why it matters + trade-off. **Suggestion blocks are mandatory whenever the fix touches 1–3 lines**: a fenced code block tagged `suggestion` containing the replacement code — it renders as an "Apply suggestion" button, and GitHub lets the author batch several suggestions into one commit. The suggestion replaces exactly the commented line range, so prefer single-line comments for single-line fixes. Example, commenting on a requirements.txt line with a typo:
-  ```suggestion
-  urllib3==1.26.5
+- Inline body: `**[P0] short title**` + why it matters + trade-off. **Suggestion blocks are mandatory whenever the fix touches 1–3 lines**: a fenced code block tagged `suggestion` containing the replacement code — it renders as an "Apply suggestion" button, and GitHub lets the author batch several suggestions into one commit. The suggestion replaces exactly the commented line range, so prefer single-line comments for single-line fixes. Only omit the suggestion when the fix is not expressible as a clean code replacement (architectural changes, multi-file fixes).
+
+  Example — a complete, correct inline body for a one-line dependency fix:
+
   ```
-  Only omit the suggestion when the fix is not expressible as a clean code replacement (architectural changes, multi-file fixes).
+  **[P1] requests pinned to a version with known CVEs**
+  `requests==2.19.0` is affected by CVE-2018-18074, which can leak auth headers on redirects. A pin is not proof of safety — upgrading costs nothing but a version bump.
+  ```suggestion
+  requests>=2.20
+  ```
+  ```
 
 **Step 2 — post the review:**
 
@@ -142,8 +148,19 @@ Verdict rules (advisory — you are a reviewer, not a gate):
 
 The task prompt states the level: `beginner`, `medium` (default), or `advanced`. A `level:<x>` override in the review comment (e.g. `/review level:beginner`) wins over the configured level.
 
-- **beginner** — teach. Standard findings plus the Learn corner. Patient tone, no unexplained jargon.
+- **beginner** — teach. Standard findings plus the Learn corner, which is **mandatory** at this level. For each P0/P1 it gives: (1) the bug class in one plain sentence, (2) a concrete real-world scenario of how it fails or gets exploited, (3) why the fix works. Define jargon and favor depth over brevity — teaching is the entire point of this level, and token cost is not a concern.
 - **medium** — the standard described above: findings with trade-offs, Notes section.
 - **advanced** — radar only. Every finding (P0–P3, inline included) is a bare one-liner: flag, location, minimal fix hint. No trade-offs, no Learn corner, no Notes. The summary is verdict plus lists.
 
 If the PR is too large to review responsibly (more than ~1500 changed lines), review the riskiest files deeply and state exactly which files you covered and which you skipped, and why.
+
+## Output contract (verify before posting)
+
+Re-read your output and check every box. If any fails, fix it BEFORE posting:
+
+- [ ] The summary starts with the `Verdict`, `Scope`, and `Level` lines, and ends with the footer (rubrics applied + level)
+- [ ] Every P0/P1 finding has an inline comment on an exact diff line, or is in the summary with an explicit reason
+- [ ] Every inline fix touching 1–3 lines carries a `suggestion` block — no prose-only fixes
+- [ ] XSS, injection, exposed secrets, and data loss are marked **P0** — never downgraded to P1
+- [ ] Every changed dependency manifest/lockfile line was reviewed against the dependency rules
+- [ ] If the level is beginner, the Learn corner is present and covers every P0/P1
