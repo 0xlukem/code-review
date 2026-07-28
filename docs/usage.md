@@ -42,7 +42,7 @@ Ways to set it (highest precedence first):
 
 1. Caller workflow input: `with: model: opencode-go/kimi-k3`
 2. Repository variable: `REVIEWER_MODEL`
-3. Default: `opencode-go/deepseek-v4-flash`
+3. Default: `opencode-go/minimax-m3` (see the cost table in the README)
 
 Any OpenCode model id works (`opencode-go/...` for the Go subscription catalog, `opencode/...` for Zen pay-as-you-go, or another provider with its own API-key secret, e.g. `ANTHROPIC_API_KEY`).
 

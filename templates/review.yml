@@ -1,8 +1,29 @@
-# Copy this file to .github/workflows/review.yml in any repo where you want
-# homemade-review, then add the OPENCODE_API_KEY secret to that repo.
+# homemade-review — caller workflow
 #
-# Pinning: @v1 is the standard movable tag. For maximum security, pin the full
-# commit SHA instead: 0xlukem/code-review/.github/workflows/reusable-review.yml@<sha>
+# What this file is: a thin trigger. When someone comments "/review" on a PR,
+# it delegates all the work to the reusable workflow in the central repo
+# (0xlukem/code-review). That keeps a single source of truth (DRY): the
+# reviewer agent, the rubrics, and all the logic live in one place, are
+# updated once, and every repo using this file picks the changes up
+# automatically — you should never need to edit this file after installing it.
+#
+# Setup: copy to .github/workflows/review.yml, then add the OPENCODE_API_KEY
+# secret (repo Settings -> Secrets and variables -> Actions).
+#
+# Pinning — the "@..." at the end of the `uses:` line chooses your update
+# policy:
+#   @v1      A movable major-version tag (same mechanism as
+#            actions/checkout@v6). You receive fixes and improvements
+#            automatically whenever the tag moves. RECOMMENDED for most users.
+#   @<sha>   A full commit SHA. Immutable: you run exactly that version until
+#            you bump it by hand. Maximum supply-chain security — nothing can
+#            change under you. Standard for high-security environments.
+# Both point at the same code; the difference is who controls updates: with
+# @v1 the central repo's maintainers, with a SHA only you.
+#
+# Note: pinning freezes this workflow's plumbing only. The reviewer rubric is
+# fetched from the central repo at runtime, so rubric improvements reach you
+# either way.
 
 name: review
 
@@ -12,8 +33,6 @@ on:
 
 jobs:
   review:
-    # Required: caller jobs must explicitly grant the permissions the
-    # reusable workflow needs, or the token arrives with all perms = none.
     permissions:
       id-token: write
       contents: read
@@ -23,7 +42,7 @@ jobs:
     with:
       # Optional — both have sensible defaults and can also be set as repo
       # variables (REVIEWER_MODEL / REVIEWER_LEVEL) without editing this file.
-      model: opencode-go/deepseek-v4-flash
+      model: opencode-go/minimax-m3
       explanation_level: medium   # beginner | medium | advanced
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
