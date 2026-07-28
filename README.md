@@ -46,7 +46,14 @@ Full command reference, config options, and overrides: **[docs/usage.md](docs/us
 
 ## Costs
 
-Measured with the default model (`deepseek-v4-flash` via OpenCode Go/Zen). A review is ~10–15 agent calls; input tokens dominate (~95% of cost). Real data point: a small PR (+~40 lines) took 14 calls, ~160k input / ~7k output tokens, **$0.005**.
+Measured on real PRs with both candidate models (small PR, +~40 lines). The default was chosen by A/B test, not vibes:
+
+| Model | Agent calls | Tokens (in / out) | Cost | Format fidelity |
+|---|---|---|---|---|
+| `deepseek-v4-flash` | 14 | ~160k / ~7.4k | $0.005 | Finds the bugs, drops the structure |
+| `minimax-m3` **(default)** | 22 | ~350k / ~8.6k | $0.038 | Full output contract (suggestions, levels, verdicts) |
+
+Both are trivially cheap; correctness and format discipline won. `deepseek-v4-flash` remains available as the ultra-budget option via `REVIEWER_MODEL`.
 
 | PR size | Lines changed | Est. tokens (in / out) | deepseek-v4-flash (PAYG) | OpenCode Go |
 |---|---|---|---|---|
