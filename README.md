@@ -1,14 +1,14 @@
 # homemade-review
 
-A personal, self-hosted AI code reviewer built on [OpenCode](https://opencode.ai). Comment `/review` on any pull request and it posts a structured **P0–P3 review** — inline on the exact diff lines for the serious stuff, with one-click fix suggestions and explicit trade-offs — aware of your repo's own rules.
+A personal, self-hosted AI code reviewer built on [OpenCode](https://opencode.ai). Comment `/review` on any pull request and it posts a structured **P0–P3 review** — inline on the exact diff lines for the serious findings, with one-click fix suggestions and explicit trade-offs — aware of your repo's own rules.
 
 Built around five ideas:
 
 1. **Customizable rubrics** — the default P0–P3 rubric is the baseline. Drop a `.github/reviewer.md` in your repo to override it, or add per-stack overlays in `rubrics/`.
 2. **It knows your rules** — it reads your repo's `AGENTS.md` before judging anything.
 3. **Explicit trade-offs** — every finding explains what the code does, what it costs, and what the alternative costs.
-4. **Inline where it matters** — P0/P1 findings land on the exact diff line, with GitHub `suggestion` blocks (one-click "Apply suggestion") when the fix is expressible in code.
-5. **Explanation levels** — `beginner` learns what the bug class is and why the fix works, `medium` gets the compact review, `advanced` gets just the radar. Configurable per repo and per invocation.
+4. **Inline where it matters** — P0/P1 findings land on the exact diff line, with GitHub `suggestion` blocks (batch-applicable, one-click fixes) when the fix is expressible in code.
+5. **Explanation levels** — `beginner` learns what the bug class is and why the fix works, `medium` gets the compact review, `advanced` gets just the radar.
 
 ## How it works
 
@@ -16,18 +16,17 @@ Built around five ideas:
 you comment "/review" on a PR in any of your repos
         │
         ▼
-that repo's tiny caller workflow
+that repo's tiny caller workflow  (templates/review.yml)
         │
         ▼
 reusable workflow in THIS repo  (.github/workflows/reusable-review.yml)
   - gated to OWNER/MEMBER/COLLABORATOR comments only
   - checks out the PR code
   - fetches the latest reviewer agent + rubrics from this repo
+    (a repo-local reviewer.md always wins)
         │
         ▼
 OpenCode runs the reviewer  (.opencode/agent/reviewer.md)
-  - reads AGENTS.md + custom rubric + stack overlays
-  - analyzes the diff with the P0-P3 rubric
         │
         ▼
 posts ONE GitHub Review: summary body + inline comments for P0/P1
@@ -36,84 +35,55 @@ posts ONE GitHub Review: summary body + inline comments for P0/P1
 
 Update the rubric once in this repo — every connected repo picks it up on the next `/review`.
 
-## Install (2 steps)
+## Quickstart
 
-1. **Copy [`templates/review.yml`](templates/review.yml)** to `.github/workflows/review.yml` in your repo.
-2. **Add your OpenCode API key** as a repository secret named `OPENCODE_API_KEY`
-   (create one at [opencode.ai/auth](https://opencode.ai/auth) → Create API Key; add it under
-   repo **Settings → Secrets and variables → Actions → New repository secret**).
-   One key covers both OpenCode plans: **Go** (subscription, `opencode-go/...` models) and **Zen** (pay-as-you-go, `opencode/...` models).
+1. Copy [`templates/review.yml`](templates/review.yml) to `.github/workflows/review.yml` in your repo.
+2. Add your OpenCode API key as a repository secret named `OPENCODE_API_KEY`
+   ([opencode.ai/auth](https://opencode.ai/auth) → Create API Key; repo **Settings → Secrets and variables → Actions**).
+3. Comment `/review` on any pull request.
 
-Then comment `/review` on any pull request.
+Full command reference, config options, and overrides: **[docs/usage.md](docs/usage.md)**.
 
-> **Visibility:** cross-repo installs require this repo to be **public** (the agent fetch is unauthenticated). While it stays private, the workflow only works inside this repo itself — a repo-local `reviewer.md` always takes precedence over the central one, which also enables fully vendored installs.
->
-> Alternative: if you don't want to depend on this repo, you can still vendor everything — copy `.opencode/agent/reviewer.md`, `rubrics/`, and a standalone workflow into your repo. You lose auto-updates.
+## Costs
 
-## Usage
+Measured on real PRs with both candidate models (small PR, +~40 lines). The default was chosen by A/B test, not vibes:
 
-| Action | How |
+| Model | Agent calls | Tokens (in / out) | Cost | Format fidelity |
+|---|---|---|---|---|
+| `deepseek-v4-flash` | 14 | ~160k / ~7.4k | $0.005 | Finds the bugs, drops the structure |
+| `minimax-m3` **(default)** | 22 | ~350k / ~8.6k | $0.038 | Full output contract (suggestions, levels, verdicts) |
+
+Both are trivially cheap; correctness and format discipline won. `deepseek-v4-flash` remains available as the ultra-budget option via `REVIEWER_MODEL`.
+
+| PR size | Lines changed | Est. tokens (in / out) | deepseek-v4-flash (PAYG) | OpenCode Go |
+|---|---|---|---|---|
+| Small | < 200 | ~150–250k / 5–10k | **≤ $0.01** (measured: $0.005) | $0 |
+| Medium | 200–800 | ~400–700k / 10–20k | ~$0.01–0.02 | $0 |
+| Large | 800–1,500 | ~0.7–1.2M / 15–30k | ~$0.02–0.05 | $0 |
+| XL | > 1,500 (triage mode) | 1M+ / 20–40k | ~$0.05–0.10 | $0 |
+
+Estimates extrapolated from the measured small-PR run; Zen's prompt caching pushes real costs below list price. Higher-end models (Kimi K3, Claude Sonnet 5) multiply cost roughly 7–30x.
+
+## Security
+
+- **Your API key is never in the repo** — public or private. It lives in GitHub's encrypted secrets store; workflows only reference it. This central repo contains zero secrets.
+- Workflow runs only for **OWNER/MEMBER/COLLABORATOR** comments — strangers can't spend your credits.
+- `GITHUB_TOKEN` is least-privilege (read code, write PR reviews) and expires with the job. Caller jobs must explicitly grant every permission — a compromised reusable workflow can't escalate beyond what callers allow.
+- The agent is **read-only** (`edit: deny`, bash allowlist: `gh` + read-only `git`) and treats PR content as untrusted data.
+- Pin the reusable workflow by tag (`@v1`) or full SHA for maximum supply-chain safety. Protect `main` here — every connected repo trusts it.
+- The reviewer **advises** (verdicts like `SUGGEST CHANGES`, review event always `COMMENT`). It never blocks, never modifies code.
+
+## Docs
+
+| Doc | Contents |
 |---|---|
-| Standard review | Comment `/review` |
-| Focus hint | `/review focus on security` or `/review only the auth changes` |
-| Change level once | `/review level:beginner` (overrides repo config) |
-| Force a fresh full review | `/review full` (skips the delta shortcut, even without new commits) |
-| Delta review | Push fixes, comment `/review` again — it acknowledges what you fixed and reports only what's still open |
-
-## Configure
-
-| What | How | Default |
-|---|---|---|
-| Model | `with: model:` in the caller workflow, or repo variable `REVIEWER_MODEL` | `opencode-go/deepseek-v4-flash` |
-| Explanation level | `with: explanation_level:`, repo variable `REVIEWER_LEVEL`, or `/review level:x` per invocation | `medium` |
-| Custom rubric | Add `.github/reviewer.md` to the reviewed repo | built-in rubric |
-| Per-stack overlays | `rubrics/<stack>.md` (shipped: `react.md`, `vue.md`, `python.md`) | auto-detected |
-| Repo conventions | The reviewer reads the repo's `AGENTS.md` automatically | — |
-
-## Severity ladder
-
-| Level | Meaning | Where it appears |
-|---|---|---|
-| **P0** | Blocks merge (broken behavior, XSS/injection, exposed secrets, data loss) | **Inline** on the diff line + summary |
-| **P1** | Should fix (edge-case bugs, missing error handling, race conditions, broken types) | **Inline** + summary |
-| **P2** | Suggestion (structure, performance that matters, weak typing, missing tests) | Summary only |
-| **P3** | Nit (style beyond what tooling enforces) | Summary only |
-
-Anti-noise by design: "when in doubt, don't report", a 30-finding ceiling that cuts P3s and P2s first — never a P0/P1 — and it never repeats what your linter already catches.
-
-## Explanation levels
-
-| Level | Each finding includes |
-|---|---|
-| `beginner` | Full finding + **Learn corner**: what this bug class is, how it fails or gets exploited in the real world, why the fix works |
-| `medium` | What + why it matters + trade-off (the default) |
-| `advanced` | Flag, location, minimal fix hint. No trade-offs, no teaching |
-
-## Dependency security
-
-Changes to manifests/lockfiles (`package.json`, `requirements.txt`, `go.mod`, ...) are always reviewed as P0/P1 candidates: typosquatting, pinned versions with known CVEs (a pin is not proof of safety), new `preinstall`/`install`/`postinstall` scripts, license and maintenance signals, and live registry verification for obscure packages when web access is available. It detects *suspicious signals* — it complements, not replaces, dedicated scanners (Socket, Snyk, Dependabot).
-
-## Security notes
-
-- **Your API key is never in the repo** — public or private. It lives in GitHub's encrypted secrets store; workflows only contain the `${{ secrets.OPENCODE_API_KEY }}` reference, and GitHub masks it in logs. This central repo contains **zero** secrets: every installer uses their own key, from their own repo.
-- The workflow only runs for comments by **OWNER, MEMBER, or COLLABORATOR** — strangers can't spend your credits.
-- The `GITHUB_TOKEN` is least-privilege (read code, write PR reviews) and expires with the job.
-- The agent has **no edit permissions** and a restricted bash allowlist (`gh` + read-only `git`).
-- The agent treats PR content as **untrusted data** to reduce prompt-injection risk.
-- **Supply chain:** your repos call this repo's reusable workflow. Pin `@v1` (standard) or a full commit SHA (maximum security). Protect `main` here (branch protection + required reviews), since every connected repo trusts it.
-- Still: treat the output as advice, not ground truth. It is a reviewer, not a gate.
-
-## Cost
-
-| Plan | Prefix | Cost per review |
-|---|---|---|
-| **OpenCode Go** (subscription) | `opencode-go/...` | ~$0 marginal — flat plan, 20+ open models (Kimi K3/K2.6, DeepSeek V4, Qwen 3.7, GLM 5.2, Grok 4.5, ...) |
-| **OpenCode Zen** (pay-as-you-go) | `opencode/...` | From fractions of a cent (`deepseek-v4-flash`) up to ~$0.05–0.20 for top models |
+| [docs/usage.md](docs/usage.md) | All `/review` commands, levels, per-repo config, custom rubrics |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Every failure we hit building this, and its fix |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Ground rules for proposing changes |
 
 ## Roadmap
 
-- ~~inline comments on diff lines~~ ✅ (P0/P1, with `suggestion` blocks)
-- ~~centralized reusable workflow~~ ✅
-- ~~explanation levels~~ ✅
-- **v0.3** — chunked reviews for PRs over ~1500 lines (batched per-file analysis, merged), optional auto-trigger on PR open
-- **v0.4** — OSV API integration for exact-version CVE checks, eval harness scoring the reviewer against real PRs
+- ~~inline comments on diff lines~~ ✅ · ~~centralized reusable workflow~~ ✅ · ~~explanation levels~~ ✅ · ~~delta reviews~~ ✅
+- **next** — `show_cost` flag (default off): appends the review's token/cost line to the summary
+- **v0.3** — chunked reviews for PRs over ~1500 lines, optional auto-trigger on PR open
+- **v0.4** — OSV API for exact-version CVE checks, eval harness scoring the reviewer against real PRs
