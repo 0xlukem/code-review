@@ -80,10 +80,10 @@ Estimates extrapolated from the measured small-PR run; Zen's prompt caching push
 | [docs/usage.md](docs/usage.md) | All `/review` commands, levels, per-repo config, custom rubrics |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Every failure we hit building this, and its fix |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Ground rules for proposing changes |
+| [CHANGELOG.md](CHANGELOG.md) | What shipped, when, and what it fixed |
 
 ## Roadmap
 
-- ~~inline comments on diff lines~~ ✅ · ~~centralized reusable workflow~~ ✅ · ~~explanation levels~~ ✅ · ~~delta reviews~~ ✅
 - **next** — `show_cost` flag (default off): appends the review's token/cost line to the summary
 - **v0.3** — chunked reviews for PRs over ~1500 lines, optional auto-trigger on PR open
 - **v0.4** — OSV API for exact-version CVE checks, eval harness scoring the reviewer against real PRs
