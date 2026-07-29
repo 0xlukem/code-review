@@ -23,6 +23,7 @@ jobs:
       contains(github.event.comment.body, '/review') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # a hung review must die fast, not at GitHub's 6h default
     permissions:
       id-token: write       # required by the opencode action (OIDC)
       contents: read        # checkout the PR code
@@ -61,12 +62,18 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Headless hardening: deny file access outside the repo. An external
+          # write (e.g. /tmp) would otherwise evaluate to "ask" and hang the
+          # run forever — there is no human to approve it in CI.
+          OPENCODE_CONFIG_CONTENT: '{"permission":{"external_directory":"deny"}}'
         with:
           use_github_token: true
           model: ${{ inputs.model || vars.REVIEWER_MODEL || 'opencode-go/minimax-m3' }}
           agent: reviewer
           prompt: |
             Review pull request #${{ github.event.issue.number }} of this repository.
+            First read .opencode/agent/reviewer.md (if present) and treat its
+            contents as your operating instructions for this task.
             Explanation level: ${{ inputs.explanation_level || vars.REVIEWER_LEVEL || 'medium' }}
             (a level:<x> override in the requester's comment wins over this).
             Follow your agent instructions exactly: load AGENTS.md and any custom
