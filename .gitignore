@@ -1,0 +1,16 @@
+# Local agent/session docs — not part of the distributed reviewer
+AGENTS.md
+docs/handoff.md
+
+# Dependencies
+.opencode/node_modules/
+
+# OS / editor noise
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Logs
+*.log
