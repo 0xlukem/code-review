@@ -78,6 +78,7 @@ jobs:
           use_github_token: true
           model: ${{ inputs.model || vars.REVIEWER_MODEL || 'opencode-go/minimax-m3' }}
           agent: reviewer
+          share: false
           prompt: |
             Review pull request #${{ github.event.issue.number }} of this repository.
             First read .opencode/agent/reviewer.md (if present) and treat its
