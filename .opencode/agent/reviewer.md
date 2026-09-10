@@ -72,13 +72,32 @@ Post exactly ONE GitHub Review: a summary body plus inline comments for P0/P1 fi
 - Inline body: `**[P0] short title**` + why it matters + trade-off. **Suggestion blocks are mandatory whenever the fix touches 1–3 lines**: a fenced code block tagged `suggestion` containing the replacement code — it renders as an "Apply suggestion" button, and GitHub lets the author batch several suggestions into one commit. The suggestion replaces exactly the commented line range, so prefer single-line comments for single-line fixes.   Only omit the suggestion when the fix is not expressible as a clean code replacement (architectural changes, multi-file fixes).
   Special case — fixes that live off-diff (e.g. a missing import that belongs at the top of the file): prefer the self-contained variant that works over the commented lines (e.g. place the import inside the function that uses it) so a suggestion is still possible, and note in the body that hoisting it to the module top is the idiomatic follow-up. Omit the suggestion only when no self-contained replacement exists.
 
-  Example — a complete, correct inline body for a one-line dependency fix:
+  **How to write a valid GitHub suggestion block:**
+  - The fenced block must be tagged exactly `suggestion` (no `diff`, no language).
+  - Inside the block put **ONLY the final replacement code**, not the old code, not `+`/`-` markers, not a diff.
+  - For a single-line fix the comment targets that one line and the suggestion block contains exactly the new line.
+  - For a multi-line replacement set `"start_line"` and `"line"` in the JSON comment so the suggestion covers the whole range, and put the complete replacement code (every line that should exist after the change) inside the block.
+  - If the fix is to delete code, the suggestion block should be empty or contain only what remains; never leave dangling keywords such as a bare `except:` or `else:`.
 
+  Examples of valid inline bodies:
+
+  One-line dependency fix:
   ```
   **[P1] requests pinned to a version with known CVEs**
   `requests==2.19.0` is affected by CVE-2018-18074, which can leak auth headers on redirects. A pin is not proof of safety — upgrading costs nothing but a version bump.
   ```suggestion
   requests>=2.20
+  ```
+  ```
+
+  Multi-line fix (comment JSON uses `"start_line": 24, "line": 26` and the block holds the full result):
+  ```
+  **[P0] Equal-split silently drops leftover cents**
+  The new loop discards the remainder. Distributing the leftover cents one at a time keeps `sum(shares) == total`.
+  ```suggestion
+      for index, participant in enumerate(participants):
+          participant_share = base_share + (1 if index < remainder else 0)
+          shares[participant.name] = cents_to_amount(participant_share)
   ```
   ```
 
@@ -172,6 +191,8 @@ Re-read your output and check every box. If any fails, fix it BEFORE posting:
 - [ ] The summary starts with the `Verdict`, `Scope`, and `Level` lines, and ends with the footer (rubrics applied + level)
 - [ ] Every P0/P1 finding has an inline comment on an exact diff line, or is in the summary with an explicit reason
 - [ ] Every inline fix touching 1–3 lines carries a `suggestion` block — no prose-only fixes
+- [ ] Every `suggestion` block contains only the replacement code (no old code, no `+`/`-`, no diff markers) and is syntactically valid for the target language
+- [ ] Multi-line suggestions use `"start_line"` and `"line"` so the commented range matches the code in the suggestion block
 - [ ] XSS, injection, exposed secrets, and data loss are marked **P0** — never downgraded to P1
 - [ ] Every changed dependency manifest/lockfile line was reviewed against the dependency rules
 - [ ] If the level is beginner, the Learn corner is present and covers every P0/P1
