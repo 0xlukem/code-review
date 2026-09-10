@@ -24,6 +24,11 @@
 # Note: pinning freezes this workflow's plumbing only. The reviewer rubric is
 # fetched from the central repo at runtime, so rubric improvements reach you
 # either way.
+#
+# IMPORTANT: add these lines to your repo's .gitignore so the fetched agent
+# and rubrics don't show up as untracked files:
+#   .opencode/
+#   rubrics/
 
 name: review
 
