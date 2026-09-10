@@ -41,6 +41,14 @@ jobs:
           # Credentials stay persisted (default) so the opencode action can
           # `git fetch` the PR branch when using use_github_token: true.
 
+      - name: Configure git identity
+        # The opencode action may run git commands internally; a missing
+        # user.name/user.email otherwise produces "empty ident name" errors
+        # that leak into PR comments. This identity is only a fallback label.
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Fetch the reviewer agent and default rubrics
         run: |
           # A repo-local reviewer.md wins (vendored installs, PRs that change

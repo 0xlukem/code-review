@@ -59,6 +59,21 @@ The reviewer only emits `suggestion` blocks for fixes touching 1–3 lines (arch
 
 **Fix:** make the central repo public, or vendor the files (copy `.opencode/agent/reviewer.md` into the target repo — a repo-local agent always takes precedence).
 
+## The review posts, then a `github-actions Bot` comment appears: "Author identity unknown"
+
+**Cause:** some part of the OpenCode action (or a post-run step) invoked git, but the runner had no `user.name` / `user.email` configured. Git fails with `fatal: empty ident name ... not allowed` and the error ends up as a PR comment.
+
+**Fix:** configure git identity in the reusable workflow before running the agent (already present in `reusable-review.yml`):
+
+```yaml
+- name: Configure git identity
+  run: |
+    git config --global user.name "github-actions[bot]"
+    git config --global user.email "github-actions[bot]@users.noreply.github.com"
+```
+
+Remember that callers pin `@v1`; after merging the fix you must move the `v1` tag so installs pick it up.
+
 ## The review ignored the repo's conventions
 
 **Check:** does `AGENTS.md` exist at the repo root? The reviewer reads it before judging. If it exists and was ignored, add explicit pointers in `.github/reviewer.md` (the custom-rubric override).
